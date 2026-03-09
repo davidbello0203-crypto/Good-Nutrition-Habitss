@@ -73,31 +73,49 @@ export default function DashboardPage() {
   useEffect(() => {
     const load = async () => {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push('/login'); return; }
-      setUserId(user.id);
-      const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
 
-      if (prof && prof.nombre) {
-        setProfile(prof);
-        setProfileForm(prof);
-      } else {
-        // Perfil vacío o inexistente — rellenar desde metadata del auth
-        const meta = user.user_metadata ?? {};
-        const filled: Profile = {
-          nombre:   prof?.nombre   || meta.nombre   || meta.full_name?.split(' ')[0] || '',
-          apellido: prof?.apellido || meta.apellido || meta.full_name?.split(' ').slice(1).join(' ') || '',
-          email:    prof?.email    || user.email    || '',
-          telefono: prof?.telefono || meta.telefono || '',
-          avatar_url: prof?.avatar_url,
+      // getSession lee desde localStorage — sin red, instantáneo
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) { router.push('/login'); return; }
+
+      const user = session.user;
+      setUserId(user.id);
+
+      // Mostrar UI de inmediato con metadata (sin esperar BD)
+      const meta = user.user_metadata ?? {};
+      const optimistic: Profile = {
+        nombre:   meta.nombre   || meta.full_name?.split(' ')[0] || '',
+        apellido: meta.apellido || meta.full_name?.split(' ').slice(1).join(' ') || '',
+        email:    user.email    || '',
+        telefono: meta.telefono || '',
+      };
+      setProfile(optimistic);
+      setProfileForm(optimistic);
+      setLoading(false); // spinner desaparece aquí
+
+      // Cargar BD en paralelo (background)
+      const [{ data: prof }, { data: reservasData }] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', user.id).maybeSingle(),
+        supabase.from('reservas').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+      ]);
+
+      setReservas(reservasData || []);
+
+      if (prof) {
+        const merged: Profile = {
+          nombre:    prof.nombre    || optimistic.nombre,
+          apellido:  prof.apellido  || optimistic.apellido,
+          email:     prof.email     || optimistic.email,
+          telefono:  prof.telefono  || optimistic.telefono,
+          avatar_url: prof.avatar_url,
         };
-        await supabase.from('profiles').upsert({ id: user.id, ...filled }, { onConflict: 'id' });
-        setProfile(filled);
-        setProfileForm(filled);
+        setProfile(merged);
+        setProfileForm(merged);
+        // Upsert solo si el perfil estaba vacío
+        if (!prof.nombre) {
+          supabase.from('profiles').upsert({ id: user.id, ...merged }, { onConflict: 'id' });
+        }
       }
-      const { data } = await supabase.from('reservas').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
-      setReservas(data || []);
-      setLoading(false);
     };
     load();
   }, [router]);
