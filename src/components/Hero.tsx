@@ -104,7 +104,7 @@ export default function Hero() {
           <button
             onClick={() => {
               if (loggedIn) window.dispatchEvent(new CustomEvent('open-reservar'));
-              else window.location.href = '/registro?from=reservar';
+              else window.location.href = '/login?from=reservar';
             }}
             className="hero-btn-gold"
           >

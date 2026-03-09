@@ -140,7 +140,7 @@ export default function Navbar() {
               <button
                 onClick={() => {
                   if (userEmail) window.dispatchEvent(new CustomEvent('open-reservar'));
-                  else window.location.href = '/registro?from=reservar';
+                  else window.location.href = '/login?from=reservar';
                 }}
                 style={{
                   fontFamily: 'var(--font-inter), system-ui, sans-serif',
@@ -208,7 +208,7 @@ export default function Navbar() {
                 onClick={() => {
                   setMobileOpen(false);
                   if (userEmail) window.dispatchEvent(new CustomEvent('open-reservar'));
-                  else window.location.href = '/registro?from=reservar';
+                  else window.location.href = '/login?from=reservar';
                 }}
                 style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif', fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase', color: '#F0F0F0', backgroundColor: '#F07820', border: '1px solid #F07820', padding: '13px 32px', cursor: 'pointer' }}>
                 Reservar ahora

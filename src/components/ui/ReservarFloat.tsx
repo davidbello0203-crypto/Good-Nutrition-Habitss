@@ -210,7 +210,7 @@ export default function ReservarFloat() {
         <button
           onClick={() => {
             if (isLoggedIn) window.dispatchEvent(new CustomEvent('open-reservar'));
-            else window.location.href = '/registro?from=reservar';
+            else window.location.href = '/login?from=reservar';
           }}
           style={{
             width: '58px', height: '58px', borderRadius: '50%',

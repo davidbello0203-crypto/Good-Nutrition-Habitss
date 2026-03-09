@@ -125,7 +125,7 @@ export default function Services() {
                   <button
                     onClick={() => {
                       if (loggedIn) window.dispatchEvent(new CustomEvent('open-reservar'));
-                      else window.location.href = '/registro?from=reservar';
+                      else window.location.href = '/login?from=reservar';
                     }}
                     style={{
                       width: '100%', padding: '12px 16px', cursor: 'pointer',

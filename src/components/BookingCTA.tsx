@@ -55,7 +55,7 @@ export default function BookingCTA() {
           style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
           <button onClick={() => {
             if (loggedIn) window.dispatchEvent(new CustomEvent('open-reservar'));
-            else window.location.href = '/registro?from=reservar';
+            else window.location.href = '/login?from=reservar';
           }} className="cta-btn-gold">
             {loggedIn ? 'Reservar mi cita' : 'Regístrate y reserva'}
           </button>
