@@ -11,7 +11,7 @@ export default function BookingCTA() {
   const [loggedIn, setLoggedIn] = useState(false);
 
   useEffect(() => {
-    createClient().auth.getUser().then(({ data: { user } }) => setLoggedIn(!!user));
+    createClient().auth.getSession().then(({ data: { session } }) => setLoggedIn(!!session?.user));
   }, []);
 
   return (
