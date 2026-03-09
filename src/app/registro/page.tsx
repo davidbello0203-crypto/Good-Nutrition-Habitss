@@ -55,7 +55,7 @@ function RegistroForm() {
   const handleResend = async () => {
     setResending(true);
     setResent(false);
-    await createClient().auth.resend({ type: 'signup', email: form.email });
+    await createClient().auth.resend({ type: 'signup', email: form.email, options: { emailRedirectTo: `${window.location.origin}/auth/callback` } });
     setResent(true);
     setResending(false);
   };

@@ -101,6 +101,13 @@ export default function ReservarFloat() {
   const [done, setDone] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    createClient().auth.getSession().then(({ data: { session } }) => setIsLoggedIn(!!session?.user));
+    const { data: { subscription } } = createClient().auth.onAuthStateChange((_e, session) => setIsLoggedIn(!!session?.user));
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     const handler = () => {
@@ -201,7 +208,10 @@ export default function ReservarFloat() {
         style={{ position: 'fixed', bottom: '28px', right: '24px', zIndex: 50 }}
       >
         <button
-          onClick={() => window.dispatchEvent(new CustomEvent('open-reservar'))}
+          onClick={() => {
+            if (isLoggedIn) window.dispatchEvent(new CustomEvent('open-reservar'));
+            else window.location.href = '/registro?from=reservar';
+          }}
           style={{
             width: '58px', height: '58px', borderRadius: '50%',
             backgroundColor: '#F07820', border: 'none', color: '#F0F0F0',

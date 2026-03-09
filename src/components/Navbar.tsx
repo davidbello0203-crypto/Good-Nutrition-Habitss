@@ -7,8 +7,8 @@ import { User } from 'lucide-react';
 
 const NAV_LINKS = [
   { label: 'Inicio', href: '#inicio' },
-  { label: 'Servicios', href: '#servicios' },
   { label: 'Sobre mí', href: '#sobre-mi' },
+  { label: 'Servicios', href: '#servicios' },
   { label: 'Contacto', href: '#contacto' },
 ];
 const SECTION_IDS = NAV_LINKS.map((l) => l.href.replace('#', ''));
@@ -138,7 +138,10 @@ export default function Navbar() {
             {/* Actions right */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
               <button
-                onClick={() => window.dispatchEvent(new CustomEvent('open-reservar'))}
+                onClick={() => {
+                  if (userEmail) window.dispatchEvent(new CustomEvent('open-reservar'));
+                  else window.location.href = '/registro?from=reservar';
+                }}
                 style={{
                   fontFamily: 'var(--font-inter), system-ui, sans-serif',
                   fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase',
@@ -202,7 +205,11 @@ export default function Navbar() {
             </ul>
             <div style={{ marginTop: '40px', paddingTop: '28px', borderTop: '1px solid rgba(40,180,74,0.12)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <button
-                onClick={() => { setMobileOpen(false); window.dispatchEvent(new CustomEvent('open-reservar')); }}
+                onClick={() => {
+                  setMobileOpen(false);
+                  if (userEmail) window.dispatchEvent(new CustomEvent('open-reservar'));
+                  else window.location.href = '/registro?from=reservar';
+                }}
                 style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif', fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase', color: '#F0F0F0', backgroundColor: '#F07820', border: '1px solid #F07820', padding: '13px 32px', cursor: 'pointer' }}>
                 Reservar ahora
               </button>

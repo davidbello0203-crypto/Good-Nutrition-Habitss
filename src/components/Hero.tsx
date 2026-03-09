@@ -102,7 +102,10 @@ export default function Hero() {
           style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center' }}
         >
           <button
-            onClick={() => window.dispatchEvent(new CustomEvent('open-reservar'))}
+            onClick={() => {
+              if (loggedIn) window.dispatchEvent(new CustomEvent('open-reservar'));
+              else window.location.href = '/registro?from=reservar';
+            }}
             className="hero-btn-gold"
           >
             {loggedIn ? 'Agendar cita' : 'Regístrate y reserva'}

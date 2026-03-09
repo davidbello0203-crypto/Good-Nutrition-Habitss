@@ -123,7 +123,10 @@ export default function Services() {
 
                 <div style={{ marginTop: 'auto', paddingTop: '20px', borderTop: `1px solid ${s.featured ? 'rgba(40,180,74,0.15)' : '#1A2418'}` }}>
                   <button
-                    onClick={() => window.dispatchEvent(new CustomEvent('open-reservar'))}
+                    onClick={() => {
+                      if (loggedIn) window.dispatchEvent(new CustomEvent('open-reservar'));
+                      else window.location.href = '/registro?from=reservar';
+                    }}
                     style={{
                       width: '100%', padding: '12px 16px', cursor: 'pointer',
                       backgroundColor: s.featured ? '#28B44A' : 'transparent',

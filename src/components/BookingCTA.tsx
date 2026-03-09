@@ -53,7 +53,10 @@ export default function BookingCTA() {
         <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.3, ease: EXPO_OUT }}
           style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <button onClick={() => window.dispatchEvent(new CustomEvent('open-reservar'))} className="cta-btn-gold">
+          <button onClick={() => {
+            if (loggedIn) window.dispatchEvent(new CustomEvent('open-reservar'));
+            else window.location.href = '/registro?from=reservar';
+          }} className="cta-btn-gold">
             {loggedIn ? 'Reservar mi cita' : 'Regístrate y reserva'}
           </button>
           <a href="https://www.instagram.com/good_nutrition_habits" target="_blank" rel="noopener noreferrer" className="cta-btn-ghost">
