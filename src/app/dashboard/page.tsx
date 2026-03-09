@@ -8,6 +8,7 @@ import {
   CalendarCheck, Clock, CheckCircle, XCircle, LogOut, Plus,
   User, Phone, Mail, Edit2, Save, X, ArrowLeft, Dumbbell, Sparkles, Camera,
 } from 'lucide-react';
+import AvatarCrop from '@/components/ui/AvatarCrop';
 
 const EXPO_OUT = [0.16, 1, 0.3, 1] as const;
 
@@ -66,6 +67,7 @@ export default function DashboardPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarError, setAvatarError] = useState('');
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
   const tip = TIPS[new Date().getDay() % TIPS.length];
 
   useEffect(() => {
@@ -131,28 +133,36 @@ export default function DashboardPage() {
     router.push('/');
   };
 
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !userId) return;
+    if (!file) return;
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
       setAvatarError('Solo se aceptan imágenes JPG, PNG o WebP.'); return;
     }
-    if (file.size > 3 * 1024 * 1024) {
-      setAvatarError('La imagen no debe superar 3 MB.'); return;
+    if (file.size > 10 * 1024 * 1024) {
+      setAvatarError('La imagen no debe superar 10 MB.'); return;
     }
     setAvatarError('');
+    const reader = new FileReader();
+    reader.onload = () => setCropSrc(reader.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleCropConfirm = async (blob: Blob) => {
+    if (!userId) return;
+    setCropSrc(null);
     setUploadingAvatar(true);
+    setAvatarError('');
     const supabase = createClient();
-    const ext = file.name.split('.').pop();
-    const path = `${userId}/avatar.${ext}`;
-    const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
-    if (upErr) { setAvatarError('Error al subir la imagen.'); setUploadingAvatar(false); return; }
+    const path = `${userId}/avatar.jpg`;
+    const { error: upErr } = await supabase.storage.from('avatars').upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
+    if (upErr) { setAvatarError(`Error: ${upErr.message}`); setUploadingAvatar(false); return; }
     const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);
     const urlWithBust = `${publicUrl}?t=${Date.now()}`;
     await supabase.from('profiles').update({ avatar_url: urlWithBust }).eq('id', userId);
     setProfile((prev) => prev ? { ...prev, avatar_url: urlWithBust } : prev);
     setUploadingAvatar(false);
-    e.target.value = '';
   };
 
   const proximas = reservas.filter(r => r.estado !== 'cancelada');
@@ -513,6 +523,15 @@ export default function DashboardPage() {
 
         </AnimatePresence>
       </div>
+
+      {/* Crop modal */}
+      {cropSrc && (
+        <AvatarCrop
+          imageSrc={cropSrc}
+          onConfirm={handleCropConfirm}
+          onCancel={() => setCropSrc(null)}
+        />
+      )}
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
