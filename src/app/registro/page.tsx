@@ -96,7 +96,7 @@ function RegistroForm() {
       setLoading(false);
       return;
     }
-    setSuccess(true);
+    router.push('/dashboard');
     setLoading(false);
   };
 
