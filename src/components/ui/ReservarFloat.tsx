@@ -79,15 +79,19 @@ function DayButton({ label, selected, onSelect }: { label: string; selected: boo
 }
 
 async function checkAuthAndOpen(onSuccess: (nombre: string) => void) {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    window.location.href = '/login?from=reservar';
-    return;
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      window.location.href = '/login?from=reservar';
+      return;
+    }
+    const { data: prof } = await supabase.from('profiles').select('nombre, apellido').eq('id', user.id).maybeSingle();
+    const nombre = prof ? `${prof.nombre ?? ''} ${prof.apellido ?? ''}`.trim() : (user.email ?? '');
+    onSuccess(nombre);
+  } catch {
+    onSuccess('');
   }
-  const { data: prof } = await supabase.from('profiles').select('nombre, apellido').eq('id', user.id).single();
-  const nombre = prof ? `${prof.nombre ?? ''} ${prof.apellido ?? ''}`.trim() : (user.email ?? '');
-  onSuccess(nombre);
 }
 
 export default function ReservarFloat() {

@@ -62,7 +62,7 @@ export default function Navbar() {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (user) {
         setUserEmail(user.email ?? null);
-        const { data } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+        const { data } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
         setUserRole(data?.role ?? 'user');
       }
     });
