@@ -86,11 +86,14 @@ async function checkAuthAndOpen(onSuccess: (nombre: string) => void) {
       window.location.href = '/login?from=reservar';
       return;
     }
+    // Nombre desde metadata (siempre disponible, sin consulta a BD)
+    const meta = user.user_metadata ?? {};
+    const fromMeta = `${meta.nombre ?? ''} ${meta.apellido ?? ''}`.trim();
+    if (fromMeta) { onSuccess(fromMeta); return; }
+    // Fallback: consultar profiles
     const { data: prof } = await supabase.from('profiles').select('nombre, apellido').eq('id', user.id).maybeSingle();
     const fromProfile = prof ? `${prof.nombre ?? ''} ${prof.apellido ?? ''}`.trim() : '';
-    const fromMeta = `${user.user_metadata?.nombre ?? ''} ${user.user_metadata?.apellido ?? ''}`.trim();
-    const nombre = fromProfile || fromMeta || user.email?.split('@')[0] || '';
-    onSuccess(nombre);
+    onSuccess(fromProfile || user.email?.split('@')[0] || '');
   } catch {
     onSuccess('');
   }
