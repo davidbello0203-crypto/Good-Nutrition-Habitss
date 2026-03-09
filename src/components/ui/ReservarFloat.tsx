@@ -87,7 +87,9 @@ async function checkAuthAndOpen(onSuccess: (nombre: string) => void) {
       return;
     }
     const { data: prof } = await supabase.from('profiles').select('nombre, apellido').eq('id', user.id).maybeSingle();
-    const nombre = prof ? `${prof.nombre ?? ''} ${prof.apellido ?? ''}`.trim() : (user.email ?? '');
+    const fromProfile = prof ? `${prof.nombre ?? ''} ${prof.apellido ?? ''}`.trim() : '';
+    const fromMeta = `${user.user_metadata?.nombre ?? ''} ${user.user_metadata?.apellido ?? ''}`.trim();
+    const nombre = fromProfile || fromMeta || user.email?.split('@')[0] || '';
     onSuccess(nombre);
   } catch {
     onSuccess('');

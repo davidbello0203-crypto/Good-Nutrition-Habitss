@@ -75,7 +75,24 @@ export default function DashboardPage() {
       if (!user) { router.push('/login'); return; }
       setUserId(user.id);
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
-      if (prof) { setProfile(prof); setProfileForm(prof); }
+
+      if (prof && prof.nombre) {
+        setProfile(prof);
+        setProfileForm(prof);
+      } else {
+        // Perfil vacío o inexistente — rellenar desde metadata del auth
+        const meta = user.user_metadata ?? {};
+        const filled: Profile = {
+          nombre:   prof?.nombre   || meta.nombre   || meta.full_name?.split(' ')[0] || '',
+          apellido: prof?.apellido || meta.apellido || meta.full_name?.split(' ').slice(1).join(' ') || '',
+          email:    prof?.email    || user.email    || '',
+          telefono: prof?.telefono || meta.telefono || '',
+          avatar_url: prof?.avatar_url,
+        };
+        await supabase.from('profiles').upsert({ id: user.id, ...filled }, { onConflict: 'id' });
+        setProfile(filled);
+        setProfileForm(filled);
+      }
       const { data } = await supabase.from('reservas').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
       setReservas(data || []);
       setLoading(false);
