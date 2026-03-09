@@ -78,26 +78,19 @@ function DayButton({ label, selected, onSelect }: { label: string; selected: boo
   );
 }
 
-async function checkAuthAndOpen(onSuccess: (nombre: string) => void) {
-  console.log('[Reservar] checkAuthAndOpen iniciado');
-  const supabase = createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  console.log('[Reservar] session:', session ? `user=${session.user.email}` : 'null');
-  if (!session?.user) {
-    console.log('[Reservar] sin sesión → redirigiendo a login');
-    window.location.href = '/login?from=reservar';
-    return;
-  }
-  const meta = session.user.user_metadata ?? {};
-  const fromMeta = `${meta.nombre ?? ''} ${meta.apellido ?? ''}`.trim();
-  console.log('[Reservar] fromMeta:', fromMeta);
-  if (fromMeta) { onSuccess(fromMeta); return; }
+// Obtiene el nombre del usuario en background (no bloquea la apertura del modal)
+async function fetchNombre(): Promise<string> {
   try {
-    const { data: prof } = await supabase.from('profiles').select('nombre, apellido').eq('id', session.user.id).maybeSingle();
-    const fromProfile = prof ? `${prof.nombre ?? ''} ${prof.apellido ?? ''}`.trim() : '';
-    onSuccess(fromProfile || session.user.email?.split('@')[0] || '');
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return '';
+    const meta = user.user_metadata ?? {};
+    const fromMeta = `${meta.nombre ?? ''} ${meta.apellido ?? ''}`.trim();
+    if (fromMeta) return fromMeta;
+    const { data: prof } = await supabase.from('profiles').select('nombre, apellido').eq('id', user.id).maybeSingle();
+    return prof ? `${prof.nombre ?? ''} ${prof.apellido ?? ''}`.trim() : (user.email?.split('@')[0] || '');
   } catch {
-    onSuccess(session.user.email?.split('@')[0] || '');
+    return '';
   }
 }
 
@@ -111,16 +104,17 @@ export default function ReservarFloat() {
 
   useEffect(() => {
     const handler = () => {
-      console.log('[Reservar] evento open-reservar recibido');
-      checkAuthAndOpen((nombre) => {
-        console.log('[Reservar] abriendo modal con nombre:', nombre);
-        setForm({ ...EMPTY, nombre });
-        setStep(0);
-        setDone(false);
-        setOpen(true);
+      // Abrir el modal de inmediato sin esperar auth
+      setForm(EMPTY);
+      setStep(0);
+      setDone(false);
+      setSubmitError('');
+      setOpen(true);
+      // Rellenar nombre en background
+      fetchNombre().then((nombre) => {
+        if (nombre) setForm((prev) => ({ ...prev, nombre }));
       });
     };
-    console.log('[Reservar] listener registrado');
     window.addEventListener('open-reservar', handler);
 
     // Auto-abrir si viene de login con ?open=reservar
@@ -207,7 +201,7 @@ export default function ReservarFloat() {
         style={{ position: 'fixed', bottom: '28px', right: '24px', zIndex: 50 }}
       >
         <button
-          onClick={() => checkAuthAndOpen((nombre) => { setForm({ ...EMPTY, nombre }); setStep(0); setDone(false); setOpen(true); })}
+          onClick={() => window.dispatchEvent(new CustomEvent('open-reservar'))}
           style={{
             width: '58px', height: '58px', borderRadius: '50%',
             backgroundColor: '#F07820', border: 'none', color: '#F0F0F0',
