@@ -25,27 +25,32 @@ export async function proxy(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
 
-  // Protect /dashboard — must be logged in
-  if (path.startsWith('/dashboard') && !user) {
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
-
-  // Protect /admin — must be admin
-  if (path.startsWith('/admin')) {
-    if (!user) return NextResponse.redirect(new URL('/login', request.url));
+  // Get role once for all checks
+  let role: string | null = null;
+  if (user) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .maybeSingle();
-    if (profile?.role !== 'admin') {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    }
+    role = profile?.role ?? 'user';
+  }
+
+  // /dashboard — must be logged in and NOT admin
+  if (path.startsWith('/dashboard')) {
+    if (!user) return NextResponse.redirect(new URL('/login', request.url));
+    if (role === 'admin') return NextResponse.redirect(new URL('/admin', request.url));
+  }
+
+  // /admin — must be admin
+  if (path.startsWith('/admin')) {
+    if (!user) return NextResponse.redirect(new URL('/login', request.url));
+    if (role !== 'admin') return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
   // Redirect logged-in users away from login/registro
-  if ((path === '/login' || path === '/registro') && user) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+  if (path === '/login' || path === '/registro') {
+    if (user) return NextResponse.redirect(new URL(role === 'admin' ? '/admin' : '/dashboard', request.url));
   }
 
   return supabaseResponse;

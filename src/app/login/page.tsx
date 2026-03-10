@@ -75,8 +75,13 @@ function LoginForm() {
       return;
     }
 
-    // Si venía de reservar, regresar a la landing y abrir el modal
-    if (params.get('from') === 'reservar') {
+    // Verificar rol para redirigir correctamente
+    const { data: profile } = await supabase.from('profiles').select('role').eq('email', email.toLowerCase().trim()).maybeSingle();
+    const isAdmin = profile?.role === 'admin';
+
+    if (isAdmin) {
+      router.push('/admin');
+    } else if (params.get('from') === 'reservar') {
       router.push('/?open=reservar');
     } else {
       router.push('/dashboard');
