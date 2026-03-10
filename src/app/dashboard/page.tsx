@@ -65,6 +65,7 @@ export default function DashboardPage() {
   const [profileForm, setProfileForm] = useState<Profile>({ nombre: '', apellido: '', email: '', telefono: '' });
   const [savingProfile, setSavingProfile] = useState(false);
   const [cancelingId, setCancelingId] = useState<string | null>(null);
+  const [confirmCancel, setConfirmCancel] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarError, setAvatarError] = useState('');
@@ -404,12 +405,26 @@ export default function DashboardPage() {
                             {est.label}
                           </span>
                           {(r.estado === 'pendiente' || r.estado === 'confirmada') && (
-                            <button onClick={() => handleCancelar(r.id)} disabled={cancelingId === r.id}
-                              style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', backgroundColor: 'transparent', border: '1px solid rgba(255,107,107,0.2)', color: '#FF6B6B', fontFamily: 'var(--font-inter)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', transition: 'all 0.2s ease' }}
-                              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,107,107,0.08)')}
-                              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}>
-                              <X size={11} /> {cancelingId === r.id ? '...' : 'Cancelar'}
-                            </button>
+                            confirmCancel === r.id ? (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 10px', backgroundColor: 'rgba(255,107,107,0.08)', border: '1px solid rgba(255,107,107,0.3)' }}>
+                                <span style={{ fontFamily: 'var(--font-inter)', fontSize: '10px', color: 'rgba(240,240,240,0.6)' }}>¿Cancelar cita?</span>
+                                <button onClick={() => { setConfirmCancel(null); handleCancelar(r.id); }} disabled={cancelingId === r.id}
+                                  style={{ padding: '4px 10px', backgroundColor: '#FF6B6B', border: 'none', color: '#080808', fontFamily: 'var(--font-inter)', fontSize: '10px', fontWeight: 700, cursor: 'pointer' }}>
+                                  {cancelingId === r.id ? '...' : 'Sí'}
+                                </button>
+                                <button onClick={() => setConfirmCancel(null)}
+                                  style={{ padding: '4px 10px', backgroundColor: 'transparent', border: '1px solid #1A2418', color: 'rgba(240,240,240,0.5)', fontFamily: 'var(--font-inter)', fontSize: '10px', cursor: 'pointer' }}>
+                                  No
+                                </button>
+                              </div>
+                            ) : (
+                              <button onClick={() => setConfirmCancel(r.id)}
+                                style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', backgroundColor: 'transparent', border: '1px solid rgba(255,107,107,0.2)', color: '#FF6B6B', fontFamily: 'var(--font-inter)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', transition: 'all 0.2s ease' }}
+                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,107,107,0.08)')}
+                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}>
+                                <X size={11} /> Cancelar
+                              </button>
+                            )
                           )}
                         </div>
                       </motion.div>

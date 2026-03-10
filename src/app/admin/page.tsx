@@ -53,6 +53,7 @@ export default function AdminPage() {
   const [filter, setFilter] = useState<FilterEstado>('todas');
   const [search, setSearch] = useState('');
   const [updating, setUpdating] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{ id: string; action: 'confirmada' | 'cancelada' } | null>(null);
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [noteText, setNoteText] = useState('');
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
@@ -353,22 +354,38 @@ export default function AdminPage() {
                             {r.estado}
                           </span>
                           {(r.estado === 'pendiente' || r.estado === 'confirmada') && (
-                            <div style={{ display: 'flex', gap: '6px' }}>
-                              {r.estado === 'pendiente' && (
-                                <button onClick={() => updateEstado(r.id, 'confirmada')} disabled={isUpdating}
-                                  style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '7px 12px', backgroundColor: 'rgba(40,180,74,0.12)', border: '1px solid rgba(40,180,74,0.3)', color: '#28B44A', fontFamily: 'var(--font-inter)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', transition: 'all 0.2s ease' }}
-                                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(40,180,74,0.22)')}
-                                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(40,180,74,0.12)')}>
-                                  <CheckCircle size={11} /> {isUpdating ? '...' : 'Confirmar'}
+                            confirmAction?.id === r.id ? (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 10px', backgroundColor: confirmAction.action === 'confirmada' ? 'rgba(40,180,74,0.08)' : 'rgba(255,107,107,0.08)', border: `1px solid ${confirmAction.action === 'confirmada' ? 'rgba(40,180,74,0.3)' : 'rgba(255,107,107,0.3)'}` }}>
+                                <span style={{ fontFamily: 'var(--font-inter)', fontSize: '10px', color: 'rgba(240,240,240,0.6)' }}>
+                                  {confirmAction.action === 'confirmada' ? '¿Confirmar cita?' : '¿Cancelar cita?'}
+                                </span>
+                                <button onClick={() => { const a = confirmAction; setConfirmAction(null); updateEstado(a.id, a.action); }} disabled={isUpdating}
+                                  style={{ padding: '4px 10px', backgroundColor: confirmAction.action === 'confirmada' ? '#28B44A' : '#FF6B6B', border: 'none', color: '#080808', fontFamily: 'var(--font-inter)', fontSize: '10px', fontWeight: 700, cursor: 'pointer' }}>
+                                  {isUpdating ? '...' : 'Sí'}
                                 </button>
-                              )}
-                              <button onClick={() => updateEstado(r.id, 'cancelada')} disabled={isUpdating}
-                                style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '7px 12px', backgroundColor: 'rgba(255,107,107,0.08)', border: '1px solid rgba(255,107,107,0.2)', color: '#FF6B6B', fontFamily: 'var(--font-inter)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', transition: 'all 0.2s ease' }}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,107,107,0.15)')}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,107,107,0.08)')}>
-                                <XCircle size={11} /> Cancelar
-                              </button>
-                            </div>
+                                <button onClick={() => setConfirmAction(null)}
+                                  style={{ padding: '4px 10px', backgroundColor: 'transparent', border: '1px solid #1A2418', color: 'rgba(240,240,240,0.5)', fontFamily: 'var(--font-inter)', fontSize: '10px', cursor: 'pointer' }}>
+                                  No
+                                </button>
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', gap: '6px' }}>
+                                {r.estado === 'pendiente' && (
+                                  <button onClick={() => setConfirmAction({ id: r.id, action: 'confirmada' })}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '7px 12px', backgroundColor: 'rgba(40,180,74,0.12)', border: '1px solid rgba(40,180,74,0.3)', color: '#28B44A', fontFamily: 'var(--font-inter)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', transition: 'all 0.2s ease' }}
+                                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(40,180,74,0.22)')}
+                                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(40,180,74,0.12)')}>
+                                    <CheckCircle size={11} /> Confirmar
+                                  </button>
+                                )}
+                                <button onClick={() => setConfirmAction({ id: r.id, action: 'cancelada' })}
+                                  style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '7px 12px', backgroundColor: 'rgba(255,107,107,0.08)', border: '1px solid rgba(255,107,107,0.2)', color: '#FF6B6B', fontFamily: 'var(--font-inter)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', transition: 'all 0.2s ease' }}
+                                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,107,107,0.15)')}
+                                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,107,107,0.08)')}>
+                                  <XCircle size={11} /> Cancelar
+                                </button>
+                              </div>
+                            )
                           )}
                           {r.profiles?.telefono && (
                             <a href={waLink(r)} target="_blank" rel="noopener noreferrer"
