@@ -183,7 +183,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <Link href="/" style={{ display: 'inline-block' }}>
-            <Image src="/logo-gnh.png" alt="Good Nutrition Habits" width={140} height={56} style={{ objectFit: 'contain', height: '52px', width: 'auto' }} />
+            <Image src="/emblema-gnh.svg" alt="Good Nutrition Habits" width={140} height={56} style={{ objectFit: 'contain', height: '52px', width: 'auto' }} />
           </Link>
         </div>
 

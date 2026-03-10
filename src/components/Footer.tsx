@@ -13,7 +13,7 @@ export default function Footer() {
         <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8, ease: EXPO_OUT }} className="footer-grid" style={{ display: 'grid', gap: '48px', marginBottom: '64px' }}>
           {/* Brand */}
           <div>
-            <Image src="/logo-gnh.png" alt="Good Nutrition Habits" width={140} height={56} style={{ objectFit: 'contain', height: '56px', width: 'auto', marginBottom: '16px' }} />
+            <Image src="/emblema-gnh.svg" alt="Good Nutrition Habits" width={140} height={56} style={{ objectFit: 'contain', height: '56px', width: 'auto', marginBottom: '16px' }} />
             <p style={{ fontFamily: 'var(--font-inter)', fontSize: '14px', fontWeight: 300, color: 'rgba(240,240,240,0.45)', lineHeight: 1.75, maxWidth: '260px' }}>
               Nutrición y entrenamiento profesional para transformar tu vida con hábitos saludables duraderos.
             </p>

@@ -109,7 +109,7 @@ function RegistroForm() {
 
           <div style={{ marginBottom: '40px' }}>
             <Link href="/" style={{ display: 'inline-block' }}>
-              <Image src="/logo-gnh.png" alt="Good Nutrition Habits" width={140} height={56} style={{ objectFit: 'contain', height: '48px', width: 'auto' }} />
+              <Image src="/emblema-gnh.svg" alt="Good Nutrition Habits" width={140} height={56} style={{ objectFit: 'contain', height: '48px', width: 'auto' }} />
             </Link>
           </div>
 
@@ -196,7 +196,7 @@ function RegistroForm() {
 
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <Link href="/" style={{ display: 'inline-block' }}>
-            <Image src="/logo-gnh.png" alt="Good Nutrition Habits" width={140} height={56} style={{ objectFit: 'contain', height: '52px', width: 'auto' }} />
+            <Image src="/emblema-gnh.svg" alt="Good Nutrition Habits" width={140} height={56} style={{ objectFit: 'contain', height: '52px', width: 'auto' }} />
           </Link>
         </div>
 

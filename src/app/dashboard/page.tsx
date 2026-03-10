@@ -210,7 +210,7 @@ export default function DashboardPage() {
           {/* Left: logo + back */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             <Link href="/" style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-              <Image src="/logo-gnh.png" alt="GNH" width={100} height={40} style={{ objectFit: 'contain', height: '36px', width: 'auto' }} />
+              <Image src="/emblema-gnh.svg" alt="GNH" width={100} height={40} style={{ objectFit: 'contain', height: '36px', width: 'auto' }} />
             </Link>
             <Link href="/"
               style={{ display: 'flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-inter)', fontSize: '11px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(240,240,240,0.4)', textDecoration: 'none', transition: 'color 0.2s ease', whiteSpace: 'nowrap' }}

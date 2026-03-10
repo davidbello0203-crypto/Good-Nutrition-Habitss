@@ -84,7 +84,7 @@ export default function ConfirmadoPage() {
         {/* Logo */}
         <div style={{ marginBottom: '48px' }}>
           <Link href="/" style={{ display: 'inline-block' }}>
-            <Image src="/logo-gnh.png" alt="Good Nutrition Habits" width={140} height={56} style={{ objectFit: 'contain', height: '48px', width: 'auto' }} />
+            <Image src="/emblema-gnh.svg" alt="Good Nutrition Habits" width={140} height={56} style={{ objectFit: 'contain', height: '48px', width: 'auto' }} />
           </Link>
         </div>
 
