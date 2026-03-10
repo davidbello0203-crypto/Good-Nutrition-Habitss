@@ -14,6 +14,7 @@ type Reserva = {
   id: string;
   user_id: string;
   servicio: string;
+  tipo: 'nutricion' | 'entrenamiento';
   dia: string;
   horario: string;
   objetivo: string;
@@ -43,6 +44,7 @@ const ESTADO_COLORS = {
 
 type Tab = 'citas' | 'clientes' | 'estadisticas';
 type FilterEstado = 'todas' | 'pendiente' | 'confirmada' | 'cancelada';
+type FilterTipo = 'todas' | 'nutricion' | 'entrenamiento';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -51,6 +53,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>('citas');
   const [filter, setFilter] = useState<FilterEstado>('todas');
+  const [tipoFilter, setTipoFilter] = useState<FilterTipo>('todas');
   const [search, setSearch] = useState('');
   const [updating, setUpdating] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<{ id: string; action: 'confirmada' | 'cancelada' } | null>(null);
@@ -131,11 +134,12 @@ export default function AdminPage() {
   };
 
   const exportCSV = () => {
-    const headers = ['Nombre', 'Email', 'Teléfono', 'Servicio', 'Día', 'Horario', 'Objetivo', 'Estado', 'Fecha'];
+    const headers = ['Nombre', 'Email', 'Teléfono', 'Tipo', 'Servicio', 'Día', 'Horario', 'Objetivo', 'Estado', 'Fecha'];
     const rows = reservas.map(r => [
       `${r.profiles?.nombre} ${r.profiles?.apellido}`,
       r.profiles?.email,
       r.profiles?.telefono || '',
+      r.tipo || 'nutricion',
       r.servicio, r.dia, r.horario, r.objetivo, r.estado,
       new Date(r.created_at).toLocaleDateString('es-MX'),
     ]);
@@ -157,6 +161,8 @@ export default function AdminPage() {
     pendientes: reservas.filter(r => r.estado === 'pendiente').length,
     confirmadas: reservas.filter(r => r.estado === 'confirmada').length,
     clientes: new Set(reservas.map(r => r.user_id)).size,
+    nutricion: reservas.filter(r => (r.tipo ?? 'nutricion') === 'nutricion').length,
+    entrenamiento: reservas.filter(r => r.tipo === 'entrenamiento').length,
   };
 
   // Chart data — citas por servicio
@@ -176,8 +182,9 @@ export default function AdminPage() {
 
   const filtered = reservas.filter(r => {
     const matchEstado = filter === 'todas' || r.estado === filter;
+    const matchTipo = tipoFilter === 'todas' || (r.tipo ?? 'nutricion') === tipoFilter;
     const matchSearch = !search || `${r.profiles?.nombre} ${r.profiles?.apellido} ${r.profiles?.email}`.toLowerCase().includes(search.toLowerCase());
-    return matchEstado && matchSearch;
+    return matchEstado && matchTipo && matchSearch;
   });
 
   const clientesFiltrados = clientes.filter(c =>
@@ -273,7 +280,31 @@ export default function AdminPage() {
           {/* TAB: CITAS */}
           {tab === 'citas' && (
             <motion.div key="citas" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-              {/* Filtros */}
+
+              {/* Segmento por tipo */}
+              <div style={{ display: 'flex', gap: '0', marginBottom: '16px' }}>
+                {([
+                  ['todas',          'Todos',          stats.total],
+                  ['nutricion',      '🥗 Nutrición',   stats.nutricion],
+                  ['entrenamiento',  '🏋️ Entrenamiento', stats.entrenamiento],
+                ] as [FilterTipo, string, number][]).map(([t, label, count], i) => (
+                  <button key={t} onClick={() => setTipoFilter(t)}
+                    style={{
+                      padding: '10px 20px',
+                      border: `1px solid ${tipoFilter === t ? '#28B44A' : '#1A2418'}`,
+                      marginLeft: i > 0 ? '-1px' : 0,
+                      position: 'relative', zIndex: tipoFilter === t ? 1 : 0,
+                      backgroundColor: tipoFilter === t ? 'rgba(40,180,74,0.1)' : '#090C08',
+                      color: tipoFilter === t ? '#28B44A' : 'rgba(240,240,240,0.45)',
+                      fontFamily: 'var(--font-inter)', fontSize: '11px', letterSpacing: '0.12em', textTransform: 'uppercase',
+                      cursor: 'pointer', transition: 'all 0.2s ease', whiteSpace: 'nowrap',
+                    }}>
+                    {label} <span style={{ marginLeft: '6px', fontSize: '10px', opacity: 0.7 }}>({count})</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Filtros estado */}
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '16px' }}>
                 <Filter size={13} color="rgba(240,240,240,0.3)" style={{ alignSelf: 'center', marginRight: '4px' }} />
                 {(['todas', 'pendiente', 'confirmada', 'cancelada'] as FilterEstado[]).map((f) => (
@@ -308,6 +339,18 @@ export default function AdminPage() {
                               <div style={{ fontFamily: 'var(--font-inter)', fontSize: '14px', fontWeight: 600, color: '#F0F0F0' }}>{r.profiles?.nombre} {r.profiles?.apellido}</div>
                               <div style={{ fontFamily: 'var(--font-inter)', fontSize: '11px', color: 'rgba(240,240,240,0.4)' }}>{r.profiles?.email}</div>
                             </div>
+                          </div>
+                          {/* Badge de tipo */}
+                          <div style={{ marginBottom: '10px' }}>
+                            <span style={{
+                              fontFamily: 'var(--font-inter)', fontSize: '9px', letterSpacing: '0.18em',
+                              textTransform: 'uppercase', fontWeight: 600, padding: '3px 10px',
+                              backgroundColor: (r.tipo ?? 'nutricion') === 'entrenamiento' ? 'rgba(40,180,74,0.1)' : 'rgba(240,120,32,0.1)',
+                              border: `1px solid ${(r.tipo ?? 'nutricion') === 'entrenamiento' ? 'rgba(40,180,74,0.3)' : 'rgba(240,120,32,0.3)'}`,
+                              color: (r.tipo ?? 'nutricion') === 'entrenamiento' ? '#28B44A' : '#F07820',
+                            }}>
+                              {(r.tipo ?? 'nutricion') === 'entrenamiento' ? '🏋️ Entrenamiento' : '🥗 Nutrición'}
+                            </span>
                           </div>
                           <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginBottom: '12px' }}>
                             {[['Servicio', r.servicio], ['Día', r.dia], ['Horario', r.horario], ['Objetivo', r.objetivo]].map(([label, val]) => (

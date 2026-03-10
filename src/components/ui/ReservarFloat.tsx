@@ -9,6 +9,7 @@ const EXPO_OUT = [0.16, 1, 0.3, 1] as const;
 type FormData = {
   nombre: string;
   servicio: string;
+  tipo: 'nutricion' | 'entrenamiento' | 'ambos' | '';
   dia: string;
   horario: string;
   objetivo: string;
@@ -21,7 +22,7 @@ const HORARIOS = ['6:00 – 7:00 am', '7:00 – 8:00 am', '8:00 – 9:00 am', '9
 const OBJETIVOS = ['Bajar de peso', 'Ganar masa muscular', 'Mejorar hábitos alimenticios', 'Rendimiento deportivo', 'Salud general'];
 const STEPS = ['Servicio', 'Horario', 'Objetivo'];
 
-const EMPTY: FormData = { nombre: '', servicio: '', dia: '', horario: '', objetivo: '', notas: '' };
+const EMPTY: FormData = { nombre: '', servicio: '', tipo: '', dia: '', horario: '', objetivo: '', notas: '' };
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -171,6 +172,7 @@ export default function ReservarFloat() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           servicio: form.servicio,
+          tipo: form.tipo,
           dia: form.dia,
           horario: form.horario,
           objetivo: form.objetivo,
@@ -329,7 +331,15 @@ export default function ReservarFloat() {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                           {SERVICIOS.map((s) => (
                             <OptionButton key={s} label={s} selected={form.servicio === s}
-                              onSelect={() => selectAndAdvance('servicio', s, 1)} />
+                              onSelect={() => {
+                                const tipo: FormData['tipo'] = s.toLowerCase().includes('ambos')
+                                  ? 'ambos'
+                                  : s.toLowerCase().includes('entrena')
+                                  ? 'entrenamiento'
+                                  : 'nutricion';
+                                setForm(prev => ({ ...prev, servicio: s, tipo }));
+                                setTimeout(() => setStep(1), 320);
+                              }} />
                           ))}
                         </div>
                       </motion.div>

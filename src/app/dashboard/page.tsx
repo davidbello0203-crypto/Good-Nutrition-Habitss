@@ -16,6 +16,7 @@ const EXPO_OUT = [0.16, 1, 0.3, 1] as const;
 type Reserva = {
   id: string;
   servicio: string;
+  tipo: 'nutricion' | 'entrenamiento';
   dia: string;
   horario: string;
   objetivo: string;
@@ -189,6 +190,8 @@ export default function DashboardPage() {
 
   const proximas = reservas.filter(r => r.estado !== 'cancelada');
   const historial = reservas.filter(r => r.estado === 'cancelada');
+  const proximasNutricion = proximas.filter(r => (r.tipo ?? 'nutricion') === 'nutricion');
+  const proximasEntrenamiento = proximas.filter(r => r.tipo === 'entrenamiento');
   const nextCita = reservas.find(r => r.estado === 'confirmada') || reservas.find(r => r.estado === 'pendiente');
   const firstName = profile?.nombre?.split(' ')[0] || '';
   const initials = `${profile?.nombre?.[0] || ''}${profile?.apellido?.[0] || ''}`.toUpperCase() || '?';
@@ -374,62 +377,107 @@ export default function DashboardPage() {
                     </button>
                   )}
                 </div>
-              ) : (
+              ) : tab === 'historial' ? (
+                // Historial de canceladas — sin segmentación
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {(tab === 'proximas' ? proximas : historial).map((r, i) => {
+                  {historial.map((r, i) => {
                     const est = ESTADO[r.estado];
                     return (
                       <motion.div key={r.id}
                         initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.4, delay: i * 0.06, ease: EXPO_OUT }}
-                        style={{ position: 'relative', overflow: 'hidden', backgroundColor: '#090C08', border: '1px solid #1A2418', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px', transition: 'border-color 0.3s ease' }}
-                        onMouseEnter={(e) => (e.currentTarget.style.borderColor = est.bar + '55')}
-                        onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#1A2418')}>
-                        {/* Left accent bar */}
+                        style={{ position: 'relative', overflow: 'hidden', backgroundColor: '#090C08', border: '1px solid #1A2418', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
                         <div style={{ position: 'absolute', top: 0, left: 0, width: '3px', height: '100%', backgroundColor: est.bar, opacity: 0.6 }} />
                         <div style={{ display: 'flex', gap: '28px', flexWrap: 'wrap', flex: 1, paddingLeft: '8px' }}>
-                          {[
-                            ['Servicio', r.servicio, true],
-                            ['Día', r.dia, false],
-                            ['Horario', r.horario, false],
-                            ['Objetivo', r.objetivo, false],
-                          ].map(([label, val, bold]) => (
+                          {[['Servicio', r.servicio, true], ['Día', r.dia, false], ['Horario', r.horario, false]].map(([label, val, bold]) => (
                             <div key={String(label)}>
                               <div style={{ fontFamily: 'var(--font-inter)', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(240,240,240,0.3)', marginBottom: '4px' }}>{label}</div>
                               <div style={{ fontFamily: 'var(--font-inter)', fontSize: '13px', color: '#F0F0F0', fontWeight: bold ? 500 : 400 }}>{val}</div>
                             </div>
                           ))}
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ fontFamily: 'var(--font-inter)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: est.text, backgroundColor: est.bg, border: `1px solid ${est.border}`, padding: '5px 12px', whiteSpace: 'nowrap' }}>
-                            {est.label}
-                          </span>
-                          {(r.estado === 'pendiente' || r.estado === 'confirmada') && (
-                            confirmCancel === r.id ? (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 10px', backgroundColor: 'rgba(255,107,107,0.08)', border: '1px solid rgba(255,107,107,0.3)' }}>
-                                <span style={{ fontFamily: 'var(--font-inter)', fontSize: '10px', color: 'rgba(240,240,240,0.6)' }}>¿Cancelar cita?</span>
-                                <button onClick={() => { setConfirmCancel(null); handleCancelar(r.id); }} disabled={cancelingId === r.id}
-                                  style={{ padding: '4px 10px', backgroundColor: '#FF6B6B', border: 'none', color: '#080808', fontFamily: 'var(--font-inter)', fontSize: '10px', fontWeight: 700, cursor: 'pointer' }}>
-                                  {cancelingId === r.id ? '...' : 'Sí'}
-                                </button>
-                                <button onClick={() => setConfirmCancel(null)}
-                                  style={{ padding: '4px 10px', backgroundColor: 'transparent', border: '1px solid #1A2418', color: 'rgba(240,240,240,0.5)', fontFamily: 'var(--font-inter)', fontSize: '10px', cursor: 'pointer' }}>
-                                  No
-                                </button>
-                              </div>
-                            ) : (
-                              <button onClick={() => setConfirmCancel(r.id)}
-                                style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', backgroundColor: 'transparent', border: '1px solid rgba(255,107,107,0.2)', color: '#FF6B6B', fontFamily: 'var(--font-inter)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', transition: 'all 0.2s ease' }}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,107,107,0.08)')}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}>
-                                <X size={11} /> Cancelar
-                              </button>
-                            )
-                          )}
-                        </div>
+                        <span style={{ fontFamily: 'var(--font-inter)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: est.text, backgroundColor: est.bg, border: `1px solid ${est.border}`, padding: '5px 12px', whiteSpace: 'nowrap' }}>
+                          {est.label}
+                        </span>
                       </motion.div>
                     );
                   })}
+                </div>
+              ) : (
+                // Próximas — agrupadas por tipo
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  {[
+                    { tipoKey: 'nutricion',     label: '🥗 Nutrición',     color: '#F07820', bgColor: 'rgba(240,120,32,0.08)', borderColor: 'rgba(240,120,32,0.2)', citas: proximasNutricion },
+                    { tipoKey: 'entrenamiento', label: '🏋️ Entrenamiento', color: '#28B44A', bgColor: 'rgba(40,180,74,0.08)',  borderColor: 'rgba(40,180,74,0.2)',  citas: proximasEntrenamiento },
+                  ].filter(g => g.citas.length > 0).map((grupo) => (
+                    <div key={grupo.tipoKey}>
+                      {/* Encabezado de sección */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', paddingBottom: '10px', borderBottom: `1px solid ${grupo.borderColor}` }}>
+                        <span style={{ fontFamily: 'var(--font-inter)', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: grupo.color, fontWeight: 600 }}>
+                          {grupo.label}
+                        </span>
+                        <span style={{ fontFamily: 'var(--font-inter)', fontSize: '10px', color: 'rgba(240,240,240,0.3)', backgroundColor: grupo.bgColor, border: `1px solid ${grupo.borderColor}`, padding: '2px 8px' }}>
+                          {grupo.citas.length} cita{grupo.citas.length !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {grupo.citas.map((r, i) => {
+                          const est = ESTADO[r.estado];
+                          return (
+                            <motion.div key={r.id}
+                              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.4, delay: i * 0.06, ease: EXPO_OUT }}
+                              style={{ position: 'relative', overflow: 'hidden', backgroundColor: '#090C08', border: '1px solid #1A2418', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px', transition: 'border-color 0.3s ease' }}
+                              onMouseEnter={(e) => (e.currentTarget.style.borderColor = est.bar + '55')}
+                              onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#1A2418')}>
+                              <div style={{ position: 'absolute', top: 0, left: 0, width: '3px', height: '100%', backgroundColor: est.bar, opacity: 0.6 }} />
+                              <div style={{ display: 'flex', gap: '28px', flexWrap: 'wrap', flex: 1, paddingLeft: '8px' }}>
+                                {[
+                                  ['Servicio', r.servicio, true],
+                                  ['Día', r.dia, false],
+                                  ['Horario', r.horario, false],
+                                  ['Objetivo', r.objetivo, false],
+                                ].map(([label, val, bold]) => (
+                                  <div key={String(label)}>
+                                    <div style={{ fontFamily: 'var(--font-inter)', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(240,240,240,0.3)', marginBottom: '4px' }}>{label}</div>
+                                    <div style={{ fontFamily: 'var(--font-inter)', fontSize: '13px', color: '#F0F0F0', fontWeight: bold ? 500 : 400 }}>{val}</div>
+                                  </div>
+                                ))}
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <span style={{ fontFamily: 'var(--font-inter)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: est.text, backgroundColor: est.bg, border: `1px solid ${est.border}`, padding: '5px 12px', whiteSpace: 'nowrap' }}>
+                                  {est.label}
+                                </span>
+                                {(r.estado === 'pendiente' || r.estado === 'confirmada') && (
+                                  confirmCancel === r.id ? (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 10px', backgroundColor: 'rgba(255,107,107,0.08)', border: '1px solid rgba(255,107,107,0.3)' }}>
+                                      <span style={{ fontFamily: 'var(--font-inter)', fontSize: '10px', color: 'rgba(240,240,240,0.6)' }}>¿Cancelar cita?</span>
+                                      <button onClick={() => { setConfirmCancel(null); handleCancelar(r.id); }} disabled={cancelingId === r.id}
+                                        style={{ padding: '4px 10px', backgroundColor: '#FF6B6B', border: 'none', color: '#080808', fontFamily: 'var(--font-inter)', fontSize: '10px', fontWeight: 700, cursor: 'pointer' }}>
+                                        {cancelingId === r.id ? '...' : 'Sí'}
+                                      </button>
+                                      <button onClick={() => setConfirmCancel(null)}
+                                        style={{ padding: '4px 10px', backgroundColor: 'transparent', border: '1px solid #1A2418', color: 'rgba(240,240,240,0.5)', fontFamily: 'var(--font-inter)', fontSize: '10px', cursor: 'pointer' }}>
+                                        No
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button onClick={() => setConfirmCancel(r.id)}
+                                      style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', backgroundColor: 'transparent', border: '1px solid rgba(255,107,107,0.2)', color: '#FF6B6B', fontFamily: 'var(--font-inter)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', transition: 'all 0.2s ease' }}
+                                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,107,107,0.08)')}
+                                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}>
+                                      <X size={11} /> Cancelar
+                                    </button>
+                                  )
+                                )}
+                              </div>
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </motion.div>
