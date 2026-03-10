@@ -110,8 +110,11 @@ export default function Hero() {
           >
             {loggedIn ? 'Agendar cita' : 'Regístrate y reserva'}
           </button>
-          <button onClick={() => document.querySelector('#servicios')?.scrollIntoView({ behavior: 'smooth' })} className="hero-btn-ghost">
-            Ver servicios
+          <button onClick={() => {
+            if (loggedIn) window.location.href = '/dashboard';
+            else document.querySelector('#servicios')?.scrollIntoView({ behavior: 'smooth' });
+          }} className="hero-btn-ghost">
+            {loggedIn ? 'Ver mis citas' : 'Ver servicios'}
           </button>
         </motion.div>
       </div>

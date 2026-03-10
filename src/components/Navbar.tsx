@@ -5,20 +5,13 @@ import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { User, Instagram } from 'lucide-react';
 
-const NAV_LINKS_DEFAULT = [
+const NAV_LINKS = [
   { label: 'Inicio', href: '#inicio' },
   { label: 'Sobre mí', href: '#sobre-mi' },
   { label: 'Servicios', href: '#servicios' },
   { label: 'Contacto', href: '#contacto' },
 ];
-
-const NAV_LINKS_USER = [
-  { label: 'Inicio', href: '#inicio' },
-  { label: 'Sobre mí', href: '#sobre-mi' },
-  { label: 'Ver mis citas', href: '/dashboard' },
-  { label: 'Contacto', href: '#contacto' },
-];
-const SECTION_IDS = NAV_LINKS_DEFAULT.map((l) => l.href.replace('#', ''));
+const SECTION_IDS = NAV_LINKS.map((l) => l.href.replace('#', ''));
 
 function NavLink({ href, label, isActive, onClick }: { href: string; label: string; isActive: boolean; onClick: (href: string) => void }) {
   return (
@@ -138,7 +131,7 @@ export default function Navbar() {
           <nav className="nav-desktop" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1, gap: '16px' }}>
             {/* Links center */}
             <ul style={{ display: 'flex', alignItems: 'center', gap: '24px', listStyle: 'none', flex: 1, justifyContent: 'center' }}>
-              {(userEmail && userRole !== 'admin' ? NAV_LINKS_USER : NAV_LINKS_DEFAULT).map((l) => (
+              {NAV_LINKS.map((l) => (
                 <li key={l.href}><NavLink href={l.href} label={l.label} isActive={activeSection === l.href.replace('#', '')} onClick={handleNavClick} /></li>
               ))}
             </ul>
@@ -209,7 +202,7 @@ export default function Navbar() {
             transition={{ duration: 0.4, ease: 'easeOut' }}
             style={{ position: 'fixed', top: '72px', left: 0, right: 0, zIndex: 99, backgroundColor: 'rgba(8,8,8,0.98)', backdropFilter: 'blur(16px)', borderBottom: '1px solid rgba(40,180,74,0.15)', padding: '36px 24px 44px' }}>
             <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '26px' }}>
-              {(userEmail && userRole !== 'admin' ? NAV_LINKS_USER : NAV_LINKS_DEFAULT).map((l, i) => (
+              {NAV_LINKS.map((l, i) => (
                 <motion.li key={l.href} initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06, duration: 0.4 }}>
                   <button onClick={() => handleNavClick(l.href)}
                     style={{ background: 'none', border: 'none', fontFamily: 'var(--font-inter), system-ui, sans-serif', fontSize: '12px', letterSpacing: '0.22em', textTransform: 'uppercase', color: activeSection === l.href.replace('#', '') ? '#28B44A' : '#F0F0F0', padding: '4px 0', transition: 'color 0.3s ease' }}>
