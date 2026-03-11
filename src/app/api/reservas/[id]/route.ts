@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'bryangil0203@gmail.com';
 
@@ -65,8 +65,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    // Verify identity with regular client (reads session cookie)
+    const authClient = await createClient();
+    const { data: { user } } = await authClient.auth.getUser();
 
     if (!user) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
@@ -79,12 +80,14 @@ export async function DELETE(
 
     const { id } = await params;
 
-    const { error } = await supabase.from('reservas').delete().eq('id', id);
+    // Use admin client to bypass RLS for the actual delete
+    const adminClient = await createAdminClient();
+    const { error } = await adminClient.from('reservas').delete().eq('id', id);
     if (error) throw error;
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error(err);
+    console.error('DELETE reserva error:', err);
     return NextResponse.json({ error: 'Error al eliminar la reserva' }, { status: 500 });
   }
 }

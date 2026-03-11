@@ -222,9 +222,13 @@ export default function AdminPage() {
       if (res.ok) {
         setDeleteConfirmId(null);
         setReservas(prev => prev.filter(r => r.id !== id));
+      } else {
+        const json = await res.json().catch(() => ({}));
+        console.error('Delete failed:', res.status, json.error);
+        alert(`Error al eliminar: ${json.error || res.status}`);
       }
-    } catch {
-      // silently fail
+    } catch (err) {
+      console.error('Delete exception:', err);
     }
     setDeleting(null);
   };
