@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
+const ADMIN_EMAIL = 'bryangil0203@gmail.com';
+
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
@@ -11,17 +13,44 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { servicio, tipo, dia, horario, objetivo, notas } = body;
+    const { servicio, tipo, dia, horario, objetivo, notas, guest_name, guest_phone } = body;
 
-    if (!servicio || !dia || !horario || !objetivo) {
+    // Guest booking: only admin can create guest reservations
+    const isGuest = !!guest_name;
+    if (isGuest && user.email !== ADMIN_EMAIL) {
+      return NextResponse.json({ error: 'Solo el admin puede crear citas de invitados' }, { status: 403 });
+    }
+
+    if (!servicio || !dia || !horario) {
+      return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 });
+    }
+
+    // For regular bookings, objetivo is required; for guest bookings, it's optional
+    if (!isGuest && !objetivo) {
       return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 });
     }
 
     const tipoFinal = tipo === 'entrenamiento' ? 'entrenamiento' : 'nutricion';
 
+    const insertData: Record<string, unknown> = {
+      user_id: user.id,
+      servicio,
+      tipo: tipoFinal,
+      dia,
+      horario,
+      objetivo: objetivo || '',
+      notas: notas || '',
+    };
+
+    // Add guest fields if present
+    if (isGuest) {
+      insertData.guest_name = guest_name;
+      insertData.guest_phone = guest_phone || '';
+    }
+
     const { data, error } = await supabase
       .from('reservas')
-      .insert({ user_id: user.id, servicio, tipo: tipoFinal, dia, horario, objetivo, notas: notas || '' })
+      .insert(insertData)
       .select()
       .single();
 

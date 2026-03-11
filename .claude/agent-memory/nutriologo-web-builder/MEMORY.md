@@ -1,54 +1,66 @@
-# Good Nutrition Habits — Memory
+# Good Nutrition Habits -- Memory
 
 ## Proyecto
 - **Ruta:** /Users/davidbello/good-nutrition-habits
-- **Stack:** Next.js 16 + TypeScript + TailwindCSS + Framer Motion + Lucide React
+- **Stack:** Next.js 16 + TypeScript + Inline styles (NO Tailwind en componentes) + Framer Motion + Lucide React
 - **Deploy:** pendiente (Vercel recomendado)
+- **Repo:** https://github.com/davidbello0203-crypto/Good-Nutrition-Habitss.git
 
 ## Cliente
 - **Marca:** GOOD NUTRITION HABITS
-- **Nutriólogo:** L.N. Bryan Yaudiel Gil Tlatempa
-- **Ciudad:** Tixtla de Guerrero, México
-- **WhatsApp:** 745 110 5266 → `https://wa.me/527451105266`
+- **Nutriologo:** L.N. Bryan Yaudiel Gil Tlatempa
+- **Ciudad:** Tixtla de Guerrero, Mexico
+- **WhatsApp:** 745 110 5266
 - **Instagram:** @good_nutrition_habits
 
-## Diseño — Titanium Elite
-- Fondo: `#080808` / Cards: `#1C1C1E` / Bordes: `#2A2A2A`
-- Plata: `#E8E8E8` / Dorado titanio: `#A89060` / Texto muted: `#8D8D8D`
+## Diseno -- Colores actuales
+- Verde: `#28B44A` (identidad/marca)
+- Naranja: `#F07820` (accion/botones), hover `#FF8C35`
+- Fondo: `#080808` / `#090C08` / Cards: `#0F1208`
+- Bordes: `#1A2418` / `#1E2A1C`
 - Fuentes: Playfair Display (headings) + Inter (cuerpo)
-- Clases utilitarias: `.text-gradient`, `.card-hover`, `.gold-border`
+- EXPO_OUT = [0.16, 1, 0.3, 1] para animaciones framer-motion
 
-## Estructura de archivos
+## Estructura de archivos clave
 ```
 src/
   app/
-    globals.css      ← tema Titanium Elite
-    layout.tsx       ← fonts + metadata SEO
-    page.tsx         ← composición de secciones
+    globals.css, layout.tsx, page.tsx
+    admin/page.tsx     -- panel admin con tabs: Citas, Calendario, Clientes, Estadisticas
+    dashboard/page.tsx -- panel usuario con tabs: Mis citas, Calendario, Canceladas, Mi perfil
+    login/page.tsx, registro/page.tsx, confirmado/page.tsx
+    api/reservas/route.ts, api/reservas/[id]/route.ts, api/email/confirmacion/route.ts
   components/
-    Navbar.tsx       ✅ sticky, mobile menu, scroll effect
-    Hero.tsx         ✅ parallax orbs, heading, CTAs, social links
-    Services.tsx     ✅ 6 cards con iconos
-    About.tsx        ✅ placeholder foto + stats grid
-    Schedule.tsx     ✅ tabla horarios Lun-Vie 6am-6pm
-    BookingCTA.tsx   ✅ WhatsApp + Instagram cards
-    Footer.tsx       ✅ branding + contacto + nav
+    Navbar.tsx, Hero.tsx, Services.tsx, About.tsx, Schedule.tsx, BookingCTA.tsx, Footer.tsx
+    ui/ReservarFloat.tsx  -- modal de reserva (4-5 pasos con WeeklyCalendar)
+    ui/WeeklyCalendar.tsx -- calendario semanal reutilizable (view/select modes)
+    ui/AvatarCrop.tsx     -- crop de avatar
+  lib/supabase/client.ts, server.ts
+  middleware.ts           -- protege /dashboard y /admin
 ```
 
-## Estado de tareas (Fase 1 — Landing)
-- ✅ Hero section premium con CTA fuerte
-- ✅ Sección de servicios (Nutrición + Entrenamiento)
-- ✅ Sección "Sobre mí"
-- ✅ Navbar responsive con branding
-- ✅ Paleta de colores y tipografía premium definida
-- ✅ Footer completo con contacto y redes
-- ⬜ Testimonios / Resultados de clientes
-- ⬜ Galería o antes/después
-- ⬜ Precios de planes
-- ⬜ Foto real del nutriólogo (placeholder activo)
+## Estado de tareas
+### Fase 1 -- Landing: COMPLETA
+### Fase 2 -- Auth: COMPLETA (login, registro, roles, perfil con avatar)
+### Fase 3 -- Reservaciones
+- ✅ Calendario de disponibilidad en tiempo real (WeeklyCalendar)
+- ✅ Reservacion de citas nutricion + entrenamiento (ReservarFloat modal)
+- ✅ Vista de mis reservaciones activas (dashboard)
+- ✅ Cancelacion de citas por usuario
+- ✅ Admin: confirmar/cancelar citas, notas, WhatsApp, CSV export
+- ✅ Admin: tab Calendario con vista semanal y detalle por slot
+- ✅ Dashboard: tab Calendario con isMine y click-to-book
+- ✅ Cita Improvisada: admin crea citas para invitados (guest_name, guest_phone)
+- ✅ Modo Limpiar admin: oculta citas canceladas (archived=true)
+- ✅ Limpiar canceladas dashboard: usuarios ocultan sus propias canceladas
+- ✅ PATCH /api/reservas/[id] para archivar reservas
+- ⬜ Confirmacion por email automatica (Resend API key pendiente)
+- ⬜ Limite de capacidad por sesion
 
 ## Pendiente inmediato
-- Foto real de Bryan para la sección About
-- Testimonios de clientes reales
-- Precios de planes
+- **SQL migration pendiente** (guest_name, guest_phone, archived en tabla reservas)
+- Credenciales Supabase en .env.local
+- API key Resend para emails
 - Deploy en Vercel
+- Foto real de Bryan
+- Testimonios, galeria, precios

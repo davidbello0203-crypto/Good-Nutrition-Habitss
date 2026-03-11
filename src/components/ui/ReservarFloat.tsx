@@ -104,23 +104,25 @@ export default function ReservarFloat() {
   const fetchSlots = async () => {
     setLoadingSlots(true);
     try {
-      const supabase = createClient();
-      const { data } = await supabase
-        .from('reservas')
-        .select('dia, horario, tipo, estado')
-        .in('estado', ['pendiente', 'confirmada']);
-      setCalSlots(
-        (data || []).map((r: { dia: string; horario: string; tipo: 'nutricion' | 'entrenamiento'; estado: string }) => ({
-          dia: r.dia,
-          horario: r.horario,
-          tipo: r.tipo ?? 'nutricion',
-          estado: r.estado,
-        }))
-      );
+      const res = await fetch('/api/disponibilidad');
+      if (res.ok) {
+        const json = await res.json();
+        setCalSlots(
+          (json.slots || []).map((r: { dia: string; horario: string; tipo: 'nutricion' | 'entrenamiento'; estado: string }) => ({
+            dia: r.dia,
+            horario: r.horario,
+            tipo: r.tipo ?? 'nutricion',
+            estado: r.estado,
+          }))
+        );
+      } else {
+        setCalSlots([]);
+      }
     } catch {
       setCalSlots([]);
+    } finally {
+      setLoadingSlots(false);
     }
-    setLoadingSlots(false);
   };
 
   useEffect(() => {
@@ -433,6 +435,7 @@ export default function ReservarFloat() {
                           <WeeklyCalendar
                             slots={calSlots}
                             mode="select"
+                            tipoFilter={form.tipo === 'entrenamiento' ? 'entrenamiento' : 'nutricion'}
                             selectedDia={currentDia}
                             selectedHorario={currentHorario}
                             onSelectSlot={(dia, horario) => {
@@ -488,6 +491,7 @@ export default function ReservarFloat() {
                           <WeeklyCalendar
                             slots={calSlots}
                             mode="select"
+                            tipoFilter="entrenamiento"
                             selectedDia={form.dia2}
                             selectedHorario={form.horario2}
                             onSelectSlot={(dia, horario) => {

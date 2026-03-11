@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 import {
   CalendarCheck, Clock, CheckCircle, XCircle, LogOut, Plus,
-  User, Phone, Mail, Edit2, Save, X, ArrowLeft, Dumbbell, Sparkles, Camera, CalendarDays, Loader2,
+  User, Phone, Mail, Edit2, Save, X, ArrowLeft, Dumbbell, Sparkles, Camera, CalendarDays, Loader2, Trash2,
 } from 'lucide-react';
 import WeeklyCalendar, { type CalSlot } from '@/components/ui/WeeklyCalendar';
 import AvatarCrop from '@/components/ui/AvatarCrop';
@@ -24,6 +24,7 @@ type Reserva = {
   notas: string;
   estado: 'pendiente' | 'confirmada' | 'cancelada';
   created_at: string;
+  archived?: boolean;
 };
 
 type Profile = {
@@ -75,6 +76,9 @@ export default function DashboardPage() {
   const [allSlots, setAllSlots] = useState<CalSlot[]>([]);
   const [loadingCalendar, setLoadingCalendar] = useState(false);
   const [calDashFilter, setCalDashFilter] = useState<'todas' | 'nutricion' | 'entrenamiento'>('todas');
+  // Feature: Limpiar canceladas
+  const [cleanMode, setCleanMode] = useState(false);
+  const [archivingId, setArchivingId] = useState<string | null>(null);
   const tip = TIPS[new Date().getDay() % TIPS.length];
 
   useEffect(() => {
@@ -217,13 +221,32 @@ export default function DashboardPage() {
     setUploadingAvatar(false);
   };
 
+  // Archive a cancelled cita (hide from user view)
+  const handleArchive = async (id: string) => {
+    setArchivingId(id);
+    try {
+      const res = await fetch(`/api/reservas/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ archived: true }),
+      });
+      if (res.ok) {
+        await reload();
+      }
+    } catch {
+      // silently fail
+    }
+    setArchivingId(null);
+  };
+
   // Load calendar slots when tab changes to calendario
   useEffect(() => {
     if (tab === 'calendario' && allSlots.length === 0) loadCalendarSlots();
   }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const proximas = reservas.filter(r => r.estado !== 'cancelada');
-  const historial = reservas.filter(r => r.estado === 'cancelada');
+  const proximas = reservas.filter(r => r.estado !== 'cancelada' && !r.archived);
+  const historial = reservas.filter(r => r.estado === 'cancelada' && !r.archived);
+  const hasNonArchivedCancelled = historial.length > 0;
   const proximasNutricion = proximas.filter(r => (r.tipo ?? 'nutricion') === 'nutricion');
   const proximasEntrenamiento = proximas.filter(r => r.tipo === 'entrenamiento');
   const nextCita = reservas.find(r => r.estado === 'confirmada') || reservas.find(r => r.estado === 'pendiente');
@@ -374,12 +397,21 @@ export default function DashboardPage() {
               </button>
             ))}
           </div>
-          <button onClick={() => window.dispatchEvent(new CustomEvent('open-reservar'))}
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '11px 24px', backgroundColor: '#F07820', border: 'none', color: '#F0F0F0', fontFamily: 'var(--font-inter)', fontSize: '11px', letterSpacing: '0.18em', textTransform: 'uppercase', cursor: 'pointer', transition: 'background-color 0.3s ease', fontWeight: 600 }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#FF8C35')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#F07820')}>
-            <Plus size={14} /> Nueva cita
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/* Limpiar canceladas button - only show in historial tab when there are cancelled citas */}
+            {tab === 'historial' && hasNonArchivedCancelled && (
+              <button onClick={() => setCleanMode(!cleanMode)}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '11px 18px', border: `1px solid ${cleanMode ? 'rgba(245,180,50,0.5)' : '#1A2418'}`, backgroundColor: cleanMode ? 'rgba(245,180,50,0.1)' : 'transparent', color: cleanMode ? '#F5B432' : 'rgba(240,240,240,0.45)', fontFamily: 'var(--font-inter)', fontSize: '11px', letterSpacing: '0.14em', textTransform: 'uppercase', cursor: 'pointer', transition: 'all 0.2s ease', whiteSpace: 'nowrap' }}>
+                <Trash2 size={12} /> Limpiar
+              </button>
+            )}
+            <button onClick={() => window.dispatchEvent(new CustomEvent('open-reservar'))}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '11px 24px', backgroundColor: '#F07820', border: 'none', color: '#F0F0F0', fontFamily: 'var(--font-inter)', fontSize: '11px', letterSpacing: '0.18em', textTransform: 'uppercase', cursor: 'pointer', transition: 'background-color 0.3s ease', fontWeight: 600 }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#FF8C35')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#F07820')}>
+              <Plus size={14} /> Nueva cita
+            </button>
+          </div>
         </div>
 
         {/* ── Tab content ── */}
@@ -412,27 +444,58 @@ export default function DashboardPage() {
                   )}
                 </div>
               ) : tab === 'historial' ? (
-                // Historial de canceladas — sin segmentación
+                // Historial de canceladas
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {/* Clean mode notice */}
+                  <AnimatePresence>
+                    {cleanMode && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3 }}
+                        style={{ padding: '12px 18px', backgroundColor: 'rgba(245,180,50,0.06)', border: '1px solid rgba(245,180,50,0.25)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <Trash2 size={14} color="#F5B432" />
+                        <span style={{ fontFamily: 'var(--font-inter)', fontSize: '12px', color: '#F5B432' }}>
+                          Modo limpiar activo -- Oculta las citas canceladas que ya no necesitas ver
+                        </span>
+                        <button onClick={() => setCleanMode(false)}
+                          style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'rgba(245,180,50,0.6)', cursor: 'pointer', padding: '2px' }}>
+                          <X size={14} />
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                   {historial.map((r, i) => {
                     const est = ESTADO[r.estado];
                     return (
                       <motion.div key={r.id}
                         initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.4, delay: i * 0.06, ease: EXPO_OUT }}
-                        style={{ position: 'relative', overflow: 'hidden', backgroundColor: '#090C08', border: '1px solid #1A2418', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
+                        style={{ position: 'relative', overflow: 'hidden', backgroundColor: '#090C08', border: `1px solid ${cleanMode ? 'rgba(245,180,50,0.25)' : '#1A2418'}`, padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
                         <div style={{ position: 'absolute', top: 0, left: 0, width: '3px', height: '100%', backgroundColor: est.bar, opacity: 0.6 }} />
                         <div style={{ display: 'flex', gap: '28px', flexWrap: 'wrap', flex: 1, paddingLeft: '8px' }}>
-                          {[['Servicio', r.servicio, true], ['Día', r.dia, false], ['Horario', r.horario, false]].map(([label, val, bold]) => (
+                          {[['Servicio', r.servicio, true], ['Dia', r.dia, false], ['Horario', r.horario, false]].map(([label, val, bold]) => (
                             <div key={String(label)}>
                               <div style={{ fontFamily: 'var(--font-inter)', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(240,240,240,0.3)', marginBottom: '4px' }}>{label}</div>
                               <div style={{ fontFamily: 'var(--font-inter)', fontSize: '13px', color: '#F0F0F0', fontWeight: bold ? 500 : 400 }}>{val}</div>
                             </div>
                           ))}
                         </div>
-                        <span style={{ fontFamily: 'var(--font-inter)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: est.text, backgroundColor: est.bg, border: `1px solid ${est.border}`, padding: '5px 12px', whiteSpace: 'nowrap' }}>
-                          {est.label}
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontFamily: 'var(--font-inter)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: est.text, backgroundColor: est.bg, border: `1px solid ${est.border}`, padding: '5px 12px', whiteSpace: 'nowrap' }}>
+                            {est.label}
+                          </span>
+                          {cleanMode && (
+                            <button
+                              onClick={() => handleArchive(r.id)}
+                              disabled={archivingId === r.id}
+                              style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 12px', backgroundColor: 'rgba(255,107,107,0.12)', border: '1px solid rgba(255,107,107,0.35)', color: '#FF6B6B', fontFamily: 'var(--font-inter)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', cursor: archivingId === r.id ? 'default' : 'pointer', transition: 'all 0.2s ease', fontWeight: 600, whiteSpace: 'nowrap' }}
+                              onMouseEnter={(e) => { if (archivingId !== r.id) e.currentTarget.style.backgroundColor = 'rgba(255,107,107,0.22)'; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,107,107,0.12)'; }}>
+                              {archivingId === r.id ? <Loader2 size={11} style={{ animation: 'spin 0.8s linear infinite' }} /> : <X size={11} />}
+                              {archivingId === r.id ? '...' : 'Ocultar'}
+                            </button>
+                          )}
+                        </div>
                       </motion.div>
                     );
                   })}
