@@ -7,9 +7,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 import {
   CalendarCheck, Clock, CheckCircle, XCircle, LogOut, Plus,
-  User, Phone, Mail, Edit2, Save, X, ArrowLeft, Dumbbell, Sparkles, Camera, CalendarDays, Loader2, Trash2,
+  User, Phone, Mail, Edit2, Save, X, ArrowLeft, Dumbbell, Sparkles, Camera, CalendarDays, Loader2, Trash2, ChevronLeft, ChevronRight,
 } from 'lucide-react';
-import WeeklyCalendar, { type CalSlot } from '@/components/ui/WeeklyCalendar';
+import WeeklyCalendar, { type CalSlot, getMondayOf, formatDateISO, formatWeekLabel } from '@/components/ui/WeeklyCalendar';
 import AvatarCrop from '@/components/ui/AvatarCrop';
 
 const EXPO_OUT = [0.16, 1, 0.3, 1] as const;
@@ -76,6 +76,7 @@ export default function DashboardPage() {
   const [allSlots, setAllSlots] = useState<CalSlot[]>([]);
   const [loadingCalendar, setLoadingCalendar] = useState(false);
   const [calDashFilter, setCalDashFilter] = useState<'todas' | 'nutricion' | 'entrenamiento'>('todas');
+  const [calWeekStart, setCalWeekStart] = useState<Date>(() => getMondayOf(new Date()));
   // Feature: Limpiar canceladas
   const [cleanMode, setCleanMode] = useState(false);
   const [archivingId, setArchivingId] = useState<string | null>(null);
@@ -138,29 +139,44 @@ export default function DashboardPage() {
     setReservas(data || []);
   };
 
-  const loadCalendarSlots = async () => {
+  const loadCalendarSlots = async (week?: Date) => {
     if (!userId) return;
+    const targetWeek = week ?? calWeekStart;
     setLoadingCalendar(true);
     try {
-      const supabase = createClient();
-      // Get all active reservas (only public data: dia, horario, tipo, estado, user_id)
-      const { data } = await supabase
-        .from('reservas')
-        .select('dia, horario, tipo, estado, user_id')
-        .in('estado', ['pendiente', 'confirmada']);
-      setAllSlots(
-        (data || []).map((r: { dia: string; horario: string; tipo: string; estado: string; user_id: string }) => ({
-          dia: r.dia,
-          horario: r.horario,
-          tipo: (r.tipo ?? 'nutricion') as 'nutricion' | 'entrenamiento',
-          estado: r.estado,
-          isMine: r.user_id === userId,
-        }))
-      );
+      const res = await fetch(`/api/disponibilidad?semana=${formatDateISO(targetWeek)}`);
+      if (res.ok) {
+        const json = await res.json();
+        const supabase = createClient();
+        const { data: myReservas } = await supabase
+          .from('reservas')
+          .select('dia, horario, fecha')
+          .in('estado', ['pendiente', 'confirmada'])
+          .eq('user_id', userId);
+        const myKeys = new Set((myReservas || []).map((r: { dia: string; horario: string; fecha?: string }) => `${r.dia}|${r.horario}|${r.fecha ?? ''}`));
+        setAllSlots(
+          (json.slots || []).map((r: { dia: string; horario: string; tipo: string; estado: string; fecha?: string }) => ({
+            dia: r.dia,
+            horario: r.horario,
+            tipo: (r.tipo ?? 'nutricion') as 'nutricion' | 'entrenamiento',
+            estado: r.estado,
+            isMine: myKeys.has(`${r.dia}|${r.horario}|${r.fecha ?? ''}`),
+          }))
+        );
+      } else {
+        setAllSlots([]);
+      }
     } catch {
       setAllSlots([]);
     }
     setLoadingCalendar(false);
+  };
+
+  const changeCalWeek = (offset: number) => {
+    const newWeek = new Date(calWeekStart);
+    newWeek.setDate(calWeekStart.getDate() + offset * 7);
+    setCalWeekStart(newWeek);
+    loadCalendarSlots(newWeek);
   };
 
   const handleCancelar = async (id: string) => {
@@ -241,8 +257,8 @@ export default function DashboardPage() {
 
   // Load calendar slots when tab changes to calendario
   useEffect(() => {
-    if (tab === 'calendario' && allSlots.length === 0) loadCalendarSlots();
-  }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (tab === 'calendario') loadCalendarSlots();
+  }, [tab, calWeekStart]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const proximas = reservas.filter(r => r.estado !== 'cancelada' && !r.archived);
   const historial = reservas.filter(r => r.estado === 'cancelada' && !r.archived);
@@ -618,7 +634,7 @@ export default function DashboardPage() {
           {/* Calendario */}
           {tab === 'calendario' && (
             <motion.div key="calendario" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
                   <h2 style={{ fontFamily: 'var(--font-playfair), Georgia, serif', fontSize: '20px', fontWeight: 700, color: '#F0F0F0', marginBottom: '4px' }}>
                     Disponibilidad semanal
@@ -650,6 +666,25 @@ export default function DashboardPage() {
                 </div>
               </div>
 
+              {/* Navegación semanal */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', padding: '10px 16px', backgroundColor: '#0F1208', border: '1px solid #1A2418' }}>
+                <button
+                  onClick={() => changeCalWeek(-1)}
+                  disabled={calWeekStart <= getMondayOf(new Date())}
+                  style={{ background: 'none', border: 'none', color: calWeekStart > getMondayOf(new Date()) ? 'rgba(240,240,240,0.6)' : 'rgba(240,240,240,0.15)', cursor: calWeekStart > getMondayOf(new Date()) ? 'pointer' : 'default', padding: '4px', display: 'flex', alignItems: 'center' }}>
+                  <ChevronLeft size={16} />
+                </button>
+                <span style={{ fontFamily: 'var(--font-inter)', fontSize: '13px', color: 'rgba(240,240,240,0.75)', letterSpacing: '0.03em' }}>
+                  {formatWeekLabel(calWeekStart)}
+                </span>
+                <button
+                  onClick={() => changeCalWeek(1)}
+                  disabled={false}
+                  style={{ background: 'none', border: 'none', color: 'rgba(240,240,240,0.6)', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}>
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+
               {loadingCalendar ? (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 0', gap: '10px' }}>
                   <Loader2 size={20} color="#F07820" style={{ animation: 'spin 0.8s linear infinite' }} />
@@ -660,8 +695,8 @@ export default function DashboardPage() {
                   slots={allSlots}
                   mode="view"
                   tipoFilter={calDashFilter}
+                  weekStart={calWeekStart}
                   onSelectSlot={(dia, horario) => {
-                    // If clicking on an empty slot, open reservar modal
                     const taken = allSlots.some(s => s.dia === dia && s.horario === horario);
                     if (!taken) {
                       window.dispatchEvent(new CustomEvent('open-reservar'));

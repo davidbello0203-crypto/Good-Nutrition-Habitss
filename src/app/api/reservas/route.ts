@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { servicio, tipo, dia, horario, objetivo, notas, guest_name, guest_phone } = body;
+    const { servicio, tipo, dia, horario, objetivo, notas, guest_name, guest_phone, fecha } = body;
 
     // Guest booking: only admin can create guest reservations
     const isGuest = !!guest_name;
@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
       horario,
       objetivo: objetivo || '',
       notas: notas || '',
+      ...(fecha ? { fecha } : {}),
     };
 
     // Add guest fields if present

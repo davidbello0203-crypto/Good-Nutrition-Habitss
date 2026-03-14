@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CalendarCheck, X, ChevronRight, ChevronLeft, Check, Dumbbell, Sparkles, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import WeeklyCalendar, { type CalSlot } from '@/components/ui/WeeklyCalendar';
+import WeeklyCalendar, { type CalSlot, getMondayOf, formatDateISO, formatWeekLabel, DIAS_SEMANA, DIAS_FINDE } from '@/components/ui/WeeklyCalendar';
 
 const EXPO_OUT = [0.16, 1, 0.3, 1] as const;
 
@@ -24,9 +24,17 @@ type FormData = {
 };
 
 const SERVICIOS = ['Consulta de Nutrición', 'Entrenamiento Presencial', 'Ambos (Nutrición + Entrenamiento)'];
-const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
-const HORARIOS = ['6:00 – 7:00 am', '7:00 – 8:00 am', '8:00 – 9:00 am', '9:00 – 10:00 am', '10:00 – 11:00 am', '4:00 – 5:00 pm', '5:00 – 6:00 pm'];
 const OBJETIVOS = ['Bajar de peso', 'Ganar masa muscular', 'Mejorar hábitos alimenticios', 'Rendimiento deportivo', 'Salud general'];
+const MAX_WEEKS_AHEAD = 4;
+
+// Calcula la fecha real de un dia dentro de una semana
+function computeFecha(dia: string, weekStart: Date): string {
+  const allDays = [...DIAS_SEMANA, ...DIAS_FINDE];
+  const idx = allDays.indexOf(dia);
+  const d = new Date(weekStart);
+  d.setDate(d.getDate() + idx);
+  return formatDateISO(d);
+}
 
 const EMPTY: FormData = {
   nombre: '', servicio: '', tipo: '',
@@ -100,11 +108,18 @@ export default function ReservarFloat() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [calSlots, setCalSlots] = useState<CalSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [weekStart, setWeekStart] = useState<Date>(() => getMondayOf(new Date()));
 
-  const fetchSlots = async () => {
+  const currentMonday = getMondayOf(new Date());
+  const weekDiff = Math.round((weekStart.getTime() - currentMonday.getTime()) / (7 * 24 * 60 * 60 * 1000));
+  const canGoPrev = weekDiff > 0;
+  const canGoNext = weekDiff < MAX_WEEKS_AHEAD;
+
+  const fetchSlots = async (week?: Date) => {
+    const targetWeek = week ?? weekStart;
     setLoadingSlots(true);
     try {
-      const res = await fetch('/api/disponibilidad');
+      const res = await fetch(`/api/disponibilidad?semana=${formatDateISO(targetWeek)}`);
       if (res.ok) {
         const json = await res.json();
         setCalSlots(
@@ -125,6 +140,15 @@ export default function ReservarFloat() {
     }
   };
 
+  const changeWeek = (offset: number) => {
+    const newWeek = new Date(weekStart);
+    newWeek.setDate(weekStart.getDate() + offset * 7);
+    setWeekStart(newWeek);
+    // Reset slot selections when changing week
+    setForm(prev => ({ ...prev, dia: '', horario: '', dia2: '', horario2: '' }));
+    fetchSlots(newWeek);
+  };
+
   useEffect(() => {
     createClient().auth.getSession().then(({ data: { session } }) => setIsLoggedIn(!!session?.user));
     const { data: { subscription } } = createClient().auth.onAuthStateChange((_e, session) => setIsLoggedIn(!!session?.user));
@@ -133,13 +157,15 @@ export default function ReservarFloat() {
 
   useEffect(() => {
     const handler = () => {
+      const monday = getMondayOf(new Date());
+      setWeekStart(monday);
       setForm(EMPTY);
       setStep(0);
       setDone(false);
       setSubmitError('');
       setOpen(true);
       fetchNombre().then((nombre) => { if (nombre) setForm((prev) => ({ ...prev, nombre })); });
-      fetchSlots();
+      fetchSlots(monday);
     };
     window.addEventListener('open-reservar', handler);
     if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('open') === 'reservar') {
@@ -217,11 +243,11 @@ export default function ReservarFloat() {
         const [r1, r2] = await Promise.all([
           fetch('/api/reservas', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ servicio: 'Consulta de Nutrición', tipo: 'nutricion', dia: form.dia, horario: form.horario, objetivo: form.objetivo, notas: form.notas }),
+            body: JSON.stringify({ servicio: 'Consulta de Nutrición', tipo: 'nutricion', dia: form.dia, horario: form.horario, objetivo: form.objetivo, notas: form.notas, fecha: computeFecha(form.dia, weekStart) }),
           }),
           fetch('/api/reservas', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ servicio: 'Entrenamiento Presencial', tipo: 'entrenamiento', dia: form.dia2, horario: form.horario2, objetivo: form.objetivo2, notas: form.notas2 }),
+            body: JSON.stringify({ servicio: 'Entrenamiento Presencial', tipo: 'entrenamiento', dia: form.dia2, horario: form.horario2, objetivo: form.objetivo2, notas: form.notas2, fecha: computeFecha(form.dia2, weekStart) }),
           }),
         ]);
         if (!r1.ok || !r2.ok) {
@@ -235,7 +261,7 @@ export default function ReservarFloat() {
       } else {
         const res = await fetch('/api/reservas', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ servicio: form.servicio, tipo: form.tipo, dia: form.dia, horario: form.horario, objetivo: form.objetivo, notas: form.notas }),
+          body: JSON.stringify({ servicio: form.servicio, tipo: form.tipo, dia: form.dia, horario: form.horario, objetivo: form.objetivo, notas: form.notas, fecha: computeFecha(form.dia, weekStart) }),
         });
         if (!res.ok) {
           if (res.status === 401) { window.location.href = '/login?from=reservar'; return; }
@@ -423,9 +449,21 @@ export default function ReservarFloat() {
                         <label style={{ display: 'block', fontFamily: 'var(--font-inter)', fontSize: '11px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(240,240,240,0.45)', marginBottom: '6px' }}>
                           Selecciona un horario disponible
                         </label>
-                        <p style={{ fontFamily: 'var(--font-inter)', fontSize: '12px', color: 'rgba(240,240,240,0.30)', marginBottom: '16px' }}>
-                          Toca una celda libre para elegir dia y hora. Avanzara automaticamente.
+                        <p style={{ fontFamily: 'var(--font-inter)', fontSize: '12px', color: 'rgba(240,240,240,0.30)', marginBottom: '12px' }}>
+                          Toca una celda libre para elegir día y hora. Avanzará automáticamente.
                         </p>
+                        {/* Navegación semanal */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', padding: '10px 14px', backgroundColor: '#0F1208', border: '1px solid #1E2A1C' }}>
+                          <button onClick={() => canGoPrev && changeWeek(-1)} disabled={!canGoPrev} style={{ background: 'none', border: 'none', color: canGoPrev ? 'rgba(240,240,240,0.6)' : 'rgba(240,240,240,0.15)', cursor: canGoPrev ? 'pointer' : 'default', padding: '4px', display: 'flex', alignItems: 'center' }}>
+                            <ChevronLeft size={16} />
+                          </button>
+                          <span style={{ fontFamily: 'var(--font-inter)', fontSize: '12px', color: 'rgba(240,240,240,0.7)', letterSpacing: '0.04em' }}>
+                            {formatWeekLabel(weekStart)}
+                          </span>
+                          <button onClick={() => canGoNext && changeWeek(1)} disabled={!canGoNext} style={{ background: 'none', border: 'none', color: canGoNext ? 'rgba(240,240,240,0.6)' : 'rgba(240,240,240,0.15)', cursor: canGoNext ? 'pointer' : 'default', padding: '4px', display: 'flex', alignItems: 'center' }}>
+                            <ChevronRight size={16} />
+                          </button>
+                        </div>
                         {loadingSlots ? (
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 0', gap: '10px' }}>
                             <Loader2 size={18} color="#F07820" style={{ animation: 'spin 0.8s linear infinite' }} />
@@ -438,6 +476,7 @@ export default function ReservarFloat() {
                             tipoFilter={form.tipo === 'entrenamiento' ? 'entrenamiento' : 'nutricion'}
                             selectedDia={currentDia}
                             selectedHorario={currentHorario}
+                            weekStart={weekStart}
                             onSelectSlot={(dia, horario) => {
                               setForm(prev => ({ ...prev, [diaField]: dia, [horarioField]: horario }));
                               setTimeout(() => setStep(s => s + 1), 350);
@@ -479,8 +518,8 @@ export default function ReservarFloat() {
                         <label style={{ display: 'block', fontFamily: 'var(--font-inter)', fontSize: '11px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(240,240,240,0.45)', marginBottom: '6px' }}>
                           Selecciona horario para entrenamiento
                         </label>
-                        <p style={{ fontFamily: 'var(--font-inter)', fontSize: '12px', color: 'rgba(240,240,240,0.30)', marginBottom: '16px' }}>
-                          Elige un horario distinto al de tu consulta de nutricion.
+                        <p style={{ fontFamily: 'var(--font-inter)', fontSize: '12px', color: 'rgba(240,240,240,0.30)', marginBottom: '12px' }}>
+                          Semana del {formatWeekLabel(weekStart)} — mismo período que tu consulta.
                         </p>
                         {loadingSlots ? (
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 0', gap: '10px' }}>
@@ -494,6 +533,7 @@ export default function ReservarFloat() {
                             tipoFilter="entrenamiento"
                             selectedDia={form.dia2}
                             selectedHorario={form.horario2}
+                            weekStart={weekStart}
                             onSelectSlot={(dia, horario) => {
                               setForm(prev => ({ ...prev, dia2: dia, horario2: horario }));
                               setTimeout(() => setStep(s => s + 1), 350);
