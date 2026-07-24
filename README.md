@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+[![header](https://capsule-render.vercel.app/api?type=waving&height=220&color=gradient:10B981,34D399&text=Good+Nutrition+Habits&fontColor=ffffff&fontSize=42&animation=fadeIn&desc=Nutrici%C3%B3n+inteligente+para+una+vida+mejor&descSize=16&descAlignY=65)](https://good-nutrition-habitss.vercel.app)
 
-## Getting Started
+[![typing](https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=18&pause=1000&color=10B981&center=true&vCenter=true&width=600&lines=%F0%9F%A5%97+Planes+nutricionales+personalizados;%F0%9F%93%85+Reserva+de+citas+online;%F0%9F%93%8A+Dashboard+con+Recharts;%F0%9F%94%90+Panel+de+administraci%C3%B3n)](https://good-nutrition-habitss.vercel.app)
 
-First, run the development server:
+---
+
+## 🧭 ¿Qué es?
+
+Plataforma integral de nutrición que permite a los usuarios acceder a planes nutricionales personalizados, reservar citas con nutricionistas y dar seguimiento a su progreso. Incluye un panel de administración completo y gráficos interactivos con Recharts.
+
+🔗 **Live:** [good-nutrition-habitss.vercel.app](https://good-nutrition-habitss.vercel.app)
+
+---
+
+## 🛠️ Stack
+
+[![stack](https://skillicons.dev/icons?i=nextjs,ts,tailwind,supabase,vercel)](https://skillicons.dev)
+
+![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=next.js&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+![Framer Motion](https://img.shields.io/badge/Framer_Motion-0055FF?style=for-the-badge&logo=framer&logoColor=white)
+![Recharts](https://img.shields.io/badge/Recharts-22B5BF?style=for-the-badge&logo=recharts&logoColor=white)
+![Resend](https://img.shields.io/badge/Resend-000000?style=for-the-badge&logo=resend&logoColor=white)
+
+---
+
+## 🚀 Desarrollo
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+[![footer](https://capsule-render.vercel.app/api?type=waving&height=100&color=34D399,059669&section=footer)](https://github.com/davidbello0203-crypto/Good-Nutrition-Habitss)
